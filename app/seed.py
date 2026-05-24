@@ -25,6 +25,8 @@ from app.fixtures import (
 def _conn():
     """Ouvre une connexion PostgreSQL en dehors du contexte Flask."""
     import psycopg2
+    if Config.DATABASE_URL:
+        return psycopg2.connect(Config.DATABASE_URL)
     return psycopg2.connect(
         host=Config.DB_HOST,
         port=Config.DB_PORT,

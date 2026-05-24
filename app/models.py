@@ -8,16 +8,24 @@ from config import Config
 def get_db():
     """
     Ouvre une connexion PostgreSQL pour la durée d'une requête HTTP.
-    Si une connexion existe déjà pour cette requête, la réutilise.
+
+    Sur Render (et la plupart des plateformes cloud), une seule variable
+    DATABASE_URL est fournie. En local, on assemble les morceaux depuis
+    config.py.
     """
     if 'db' not in g:
-        g.db = psycopg2.connect(
-            host     = Config.DB_HOST,
-            port     = Config.DB_PORT,
-            dbname   = Config.DB_NAME,
-            user     = Config.DB_USER,
-            password = Config.DB_PASSWORD
-        )
+        if Config.DATABASE_URL:
+            # Cas Render / production : on utilise l'URL complète
+            g.db = psycopg2.connect(Config.DATABASE_URL)
+        else:
+            # Cas développement local : on assemble les morceaux
+            g.db = psycopg2.connect(
+                host     = Config.DB_HOST,
+                port     = Config.DB_PORT,
+                dbname   = Config.DB_NAME,
+                user     = Config.DB_USER,
+                password = Config.DB_PASSWORD
+            )
     return g.db
 
 
