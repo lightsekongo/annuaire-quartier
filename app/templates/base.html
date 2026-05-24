@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Annuaire Quartier{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<header class="site-header">
+    <nav class="site-nav">
+        <a href="{{ url_for('menages_bp.index') }}" class="nav-brand"
+           aria-label="Retour à l'accueil">
+            <span class="nav-brand-mark">
+                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1L1 6v9h5v-4h4v4h5V6L8 1z"/>
+                </svg>
+            </span>
+            <span class="nav-brand-text">Annuaire Quartier</span>
+        </a>
+
+        <div class="nav-links">
+            <a href="{{ url_for('menages_bp.index') }}"
+               class="nav-link {% if request.endpoint == 'menages_bp.index' %}nav-active{% endif %}">
+                Accueil
+            </a>
+            <a href="{{ url_for('territoires_bp.index') }}"
+               class="nav-link {% if request.endpoint == 'territoires_bp.index' %}nav-active{% endif %}">
+                Territoires
+            </a>
+            <a href="{{ url_for('comparer_bp.index') }}"
+               class="nav-link {% if request.endpoint == 'comparer_bp.index' %}nav-active{% endif %}">
+                Comparer
+            </a>
+            <a href="{{ url_for('explorer_bp.index') }}"
+                class="nav-link {% if request.endpoint == 'explorer_bp.index' %}nav-active{% endif %}">
+                Explorer
+            </a>
+            <a href="{{ url_for('menages_bp.liste') }}"
+               class="nav-link {% if request.endpoint and request.endpoint.startswith('menages_bp.') and request.endpoint != 'menages_bp.index' %}nav-active{% endif %} {% if request.endpoint and request.endpoint.startswith('membres_bp.') %}nav-active{% endif %}">
+                Recensement
+            </a>
+            <a href="{{ url_for('apropos_bp.index') }}"
+               class="nav-link {% if request.endpoint == 'apropos_bp.index' %}nav-active{% endif %}">
+                À propos
+            </a>
+        </div>
+    </nav>
+</header>
+
+<main class="site-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Modal de confirmation -->
+<div class="modal-overlay" id="modal-confirm">
+    <div class="modal-box">
+        <div class="modal-icon">🗑️</div>
+        <h4>Confirmer la suppression</h4>
+        <p id="modal-message">Cette action est irréversible.</p>
+        <div class="modal-actions">
+            <button id="modal-annuler" class="secondary outline">Annuler</button>
+            <button id="modal-confirmer" class="btn-danger">Supprimer</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

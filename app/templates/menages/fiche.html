@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}{{ menage.nom_menage }} — Annuaire de quartier{% endblock %}
+
+{% block content %}
+
+  {# ─── Lien retour ─── #}
+  <a href="{{ url_for('menages_bp.liste') }}" class="back-link fade-in">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    Retour à la liste
+  </a>
+
+  {# ─── Messages flash ─── #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="flash flash-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {# ─── En-tête de fiche ─── #}
+  <header class="fiche-header fade-up">
+    <div class="fiche-header-main">
+      <span class="hero-eyebrow">Fiche ménage</span>
+      <h2 class="fiche-header-title">{{ menage.nom_menage }}</h2>
+      <p class="fiche-header-loc">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        <span class="text-bold">{{ menage.commune }}</span> · {{ menage.quartier }}
+      </p>
+    </div>
+
+    <div class="fiche-header-actions">
+      <a href="{{ url_for('menages_bp.modifier', id_menage=menage.id_menage) }}"
+         class="btn btn-secondary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        Modifier
+      </a>
+      <button type="button" class="btn btn-danger" id="btn-supprimer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"></path>
+          <path d="M10 11v6M14 11v6"></path>
+        </svg>
+        Supprimer
+      </button>
+    </div>
+  </header>
+
+  {# ─── Bandeau de statistiques (volumétrie) ─── #}
+  <section class="fiche-stats-band fade-up delay-1">
+    <div class="fiche-stat">
+      <div class="fiche-stat-value">{{ nb_membres }}</div>
+      <div class="fiche-stat-label">
+        Membre{{ 's' if nb_membres > 1 else '' }}
+      </div>
+    </div>
+    <div class="fiche-stat">
+      <div class="fiche-stat-value">{{ menage.nombre_pieces or '—' }}</div>
+      <div class="fiche-stat-label">Pièce{{ 's' if (menage.nombre_pieces or 0) > 1 else '' }}</div>
+    </div>
+    <div class="fiche-stat">
+      <div class="fiche-stat-value">{{ (menage.biens_durables or [])|length }}</div>
+      <div class="fiche-stat-label">Bien{{ 's' if (menage.biens_durables or [])|length > 1 else '' }} durable{{ 's' if (menage.biens_durables or [])|length > 1 else '' }}</div>
+    </div>
+    {% if menage.date_recensement %}
+      <div class="fiche-stat">
+        <div class="fiche-stat-value-small">{{ menage.date_recensement }}</div>
+        <div class="fiche-stat-label">Date du recensement</div>
+      </div>
+    {% endif %}
+  </section>
+
+  {# ─── Blocs de caractéristiques ─── #}
+  <section class="fiche-blocs fade-up delay-2">
+
+    {# Logement #}
+    <div class="fiche-bloc">
+      <h3 class="fiche-bloc-title">
+        <span class="fiche-bloc-dot fiche-bloc-dot-1"></span>
+        Logement
+      </h3>
+      <dl class="fiche-bloc-list">
+        <div class="fiche-bloc-row">
+          <dt>Type de logement</dt>
+          <dd>{{ menage.type_logement or '—' }}</dd>
+        </div>
+        <div class="fiche-bloc-row">
+          <dt>Statut d'occupation</dt>
+          <dd>{{ menage.statut_occupation or '—' }}</dd>
+        </div>
+        <div class="fiche-bloc-row">
+          <dt>Nombre de pièces</dt>
+          <dd>{{ menage.nombre_pieces or '—' }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    {# Services de base #}
+    <div class="fiche-bloc">
+      <h3 class="fiche-bloc-title">
+        <span class="fiche-bloc-dot fiche-bloc-dot-2"></span>
+        Services de base
+      </h3>
+      <dl class="fiche-bloc-list">
+        <div class="fiche-bloc-row">
+          <dt>Source d'eau</dt>
+          <dd>{{ menage.source_eau or '—' }}</dd>
+        </div>
+        <div class="fiche-bloc-row">
+          <dt>Toilettes</dt>
+          <dd>{{ menage.type_toilettes or '—' }}</dd>
+        </div>
+        <div class="fiche-bloc-row">
+          <dt>Éclairage</dt>
+          <dd>{{ menage.source_eclairage or '—' }}</dd>
+        </div>
+        <div class="fiche-bloc-row">
+          <dt>Gestion des ordures</dt>
+          <dd>{{ menage.gestion_ordures or '—' }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    {# Biens durables #}
+    <div class="fiche-bloc">
+      <h3 class="fiche-bloc-title">
+        <span class="fiche-bloc-dot fiche-bloc-dot-3"></span>
+        Biens durables
+      </h3>
+      {% if menage.biens_durables and menage.biens_durables|length > 0 %}
+        <div class="fiche-biens-list">
+          {% for bien in menage.biens_durables %}
+            <span class="tag tag-amber">{{ bien }}</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">Aucun bien durable enregistré.</p>
+      {% endif %}
+    </div>
+
+  </section>
+
+  {# ─── Membres du ménage ─── #}
+  <section class="fiche-membres fade-up delay-3">
+    <div class="fiche-membres-header">
+      <h3 class="fiche-membres-title">
+        Membres du ménage
+        <span class="fiche-membres-count">({{ nb_membres }})</span>
+      </h3>
+      <a href="{{ url_for('membres_bp.nouveau', id_menage=menage.id_menage) }}"
+         class="btn btn-primary btn-sm">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Ajouter un membre
+      </a>
+    </div>
+
+    {% if membres %}
+      <div class="membres-table-wrap">
+        <table class="membres-table">
+          <thead>
+            <tr>
+              <th>Nom complet</th>
+              <th>Lien</th>
+              <th>Sexe</th>
+              <th>Naissance</th>
+              <th>Instruction</th>
+              <th>Activité</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for membre in membres %}
+              <tr>
+                <td>
+                  <span class="text-bold">{{ membre.prenom }} {{ membre.nom }}</span>
+                  {% if membre.lien_chef == "Chef" %}
+                    <span class="tag tag-brand" style="margin-left:0.4rem">Chef</span>
+                  {% endif %}
+                </td>
+                <td class="td-muted">{{ membre.lien_chef or '—' }}</td>
+                <td>{{ membre.sexe[:1] }}</td>
+                <td class="td-mono">{{ membre.date_naissance or '—' }}</td>
+                <td class="td-muted">{{ membre.niveau_instruction or '—' }}</td>
+                <td class="td-muted">{{ membre.situation_activite or '—' }}</td>
+                <td class="text-right">
+                  <a href="{{ url_for('membres_bp.modifier', id_membre=membre.id_membre) }}"
+                     class="btn btn-ghost btn-sm"
+                     title="Modifier">
+                    ✎
+                  </a>
+                  <button type="button"
+                          class="btn btn-ghost btn-sm btn-supprimer-membre"
+                          data-id="{{ membre.id_membre }}"
+                          data-nom="{{ membre.prenom }} {{ membre.nom }}"
+                          title="Supprimer">
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state empty-state-small">
+        <p>Aucun membre enregistré pour ce ménage.</p>
+        <a href="{{ url_for('membres_bp.nouveau', id_menage=menage.id_menage) }}"
+           class="btn btn-primary btn-sm">
+          Ajouter le premier membre
+        </a>
+      </div>
+    {% endif %}
+  </section>
+
+  {# ─── Modal de confirmation de suppression du ménage ─── #}
+  <div class="modal-overlay" id="modal-suppression-menage">
+    <div class="modal-box">
+      <div class="modal-icon">⚠️</div>
+      <h4>Supprimer ce ménage ?</h4>
+      <p>
+        Cette action supprimera définitivement le ménage
+        <strong>« {{ menage.nom_menage }} »</strong>
+        et tous ses {{ nb_membres }} membre{{ 's' if nb_membres > 1 else '' }}.
+        Cette action est irréversible.
+      </p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-annuler-suppression">
+          Annuler
+        </button>
+        <form method="POST"
+              action="{{ url_for('menages_bp.supprimer', id_menage=menage.id_menage) }}"
+              style="display:inline">
+          <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# ─── Modal de confirmation de suppression d'un membre (rempli en JS) ─── #}
+  <div class="modal-overlay" id="modal-suppression-membre">
+    <div class="modal-box">
+      <div class="modal-icon">⚠️</div>
+      <h4>Supprimer ce membre ?</h4>
+      <p id="modal-membre-message"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-annuler-suppr-membre">
+          Annuler
+        </button>
+        <form method="POST" id="form-suppr-membre" style="display:inline">
+          <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // URL de base pour la suppression d'un membre (l'id sera inséré en JS)
+    window.URL_SUPPR_MEMBRE = "{{ url_for('membres_bp.supprimer', id_membre=0) }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/fiche-menage.js') }}"></script>
+
+{% endblock %}

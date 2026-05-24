@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}À propos — Annuaire de quartier{% endblock %}
+
+{% block content %}
+
+  {# ─── En-tête ─── #}
+  <div class="page-intro fade-up">
+    <span class="hero-eyebrow">À propos</span>
+    <h2 class="page-intro-title">
+      Un <em>annuaire statistique</em> du District d'Abidjan
+    </h2>
+    <p class="page-intro-sub">
+      Cette plateforme propose un panorama démographique, économique
+      et social des 13 communes et sous-préfectures du District autonome
+      d'Abidjan. Elle illustre le potentiel d'un système d'information
+      statistique territorial accessible à tous.
+    </p>
+  </div>
+
+  {# ─── Sections d'information ─── #}
+  <div class="apropos-grid fade-up delay-1">
+
+    {# Le projet #}
+    <section class="apropos-card">
+      <div class="apropos-card-icon apropos-card-icon-1">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+      </div>
+      <h3 class="apropos-card-title">Le projet</h3>
+      <p>
+        Réalisé dans le cadre du <strong>cours de programmation web</strong>
+        de la formation d'<strong>Ingénieur Statisticien Économiste (ISE 2)</strong>,
+        ce projet illustre la conception d'un outil de diffusion statistique
+        pour le grand public, à l'image de <em>Statistiques Locales</em> de l'INSEE
+        ou des portails de l'<abbr title="Institut National de la Statistique">INS</abbr>
+        de Côte d'Ivoire.
+      </p>
+    </section>
+
+    {# Périmètre #}
+    <section class="apropos-card">
+      <div class="apropos-card-icon apropos-card-icon-2">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      </div>
+      <h3 class="apropos-card-title">Périmètre géographique</h3>
+      <p>
+        Le District autonome d'Abidjan, capitale économique de la Côte
+        d'Ivoire, compte <strong>13 collectivités</strong> :
+        10 communes urbaines (Abobo, Adjamé, Attécoubé, Cocody, Koumassi,
+        Marcory, Plateau, Port-Bouët, Treichville, Yopougon) et
+        3 sous-préfectures (Anyama, Bingerville, Songon).
+        Ces collectivités regroupent près de <strong>39 quartiers</strong>
+        documentés dans l'outil.
+      </p>
+    </section>
+
+    {# Méthodologie #}
+    <section class="apropos-card">
+      <div class="apropos-card-icon apropos-card-icon-3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+      </div>
+      <h3 class="apropos-card-title">Méthodologie</h3>
+      <p>
+        Les <strong>18 indicateurs</strong> proposés couvrent trois
+        thématiques : <em>démographie</em>, <em>économie</em> et
+        <em>conditions de vie</em>. Leur calcul s'inspire des standards
+        des enquêtes ménages officielles (EDS, ENV) et des
+        <abbr title="Objectifs de Développement Durable">ODD</abbr> de l'ONU.
+        Les calculs sont effectués en temps réel avec <strong>pandas</strong>
+        à partir des données du recensement.
+      </p>
+    </section>
+
+    {# Données #}
+    <section class="apropos-card">
+      <div class="apropos-card-icon apropos-card-icon-4">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+        </svg>
+      </div>
+      <h3 class="apropos-card-title">Sources des données</h3>
+      <p>
+        Les <strong>contours géographiques</strong> sont extraits
+        d'<a href="https://www.openstreetmap.org/" target="_blank" rel="noopener">OpenStreetMap</a>
+        (limites administratives officielles) et de
+        <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>
+        (contour national). Les <strong>données du recensement</strong>
+        sont <strong>fictives</strong> à ce stade, générées avec une graine
+        reproductible (120 ménages, ~470 personnes). Elles seront remplacées
+        par des données réelles lors du déploiement.
+      </p>
+    </section>
+
+    {# Limites #}
+    <section class="apropos-card">
+      <div class="apropos-card-icon apropos-card-icon-5">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <h3 class="apropos-card-title">Limites méthodologiques</h3>
+      <p>
+        À l'échelle des <strong>quartiers</strong>, seules les statistiques
+        descriptives (volumétrie, composition) sont publiées, car les
+        effectifs sont trop faibles pour calculer des indicateurs détaillés
+        de manière fiable. Les <strong>positions GPS des quartiers</strong>
+        sont approchées (dispersion dans le polygone réel de la commune)
+        en l'absence de centroïdes officiels.
+      </p>
+    </section>
+
+    {# Stack technique #}
+    <section class="apropos-card">
+      <div class="apropos-card-icon apropos-card-icon-6">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+      </div>
+      <h3 class="apropos-card-title">Technologies utilisées</h3>
+      <p>
+        <strong>Flask</strong> (backend Python) et <strong>Jinja2</strong>
+        pour le rendu HTML, <strong>pandas</strong> pour les calculs
+        statistiques, <strong>PostgreSQL</strong> pour le stockage,
+        <strong>Leaflet</strong> pour la cartographie interactive,
+        <strong>Chart.js</strong> pour les graphiques. Tout le frontend
+        est en CSS natif (variables, animations, sticky) sans framework
+        lourd, dans un esprit institutionnel sobre.
+      </p>
+    </section>
+
+  </div>
+
+  {# ─── Bas de page : crédits ─── #}
+  <section class="apropos-credits fade-up delay-2">
+    <p class="apropos-credits-label">Conception et développement</p>
+    <p class="apropos-credits-name">Steve — Promotion ISE 2</p>
+    <p class="apropos-credits-meta">
+      École Nationale Supérieure de Statistique et d'Économie Appliquée<br>
+      Abidjan, {{ now.year if now else '2026' }}
+    </p>
+  </section>
+
+{% endblock %}

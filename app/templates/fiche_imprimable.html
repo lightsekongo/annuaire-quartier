@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Fiche Statistique — {{ date_generation }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family : 'Outfit', sans-serif;
+            color       : #09090b;
+            background  : #fff;
+            font-size   : 13px;
+            line-height : 1.5;
+        }
+
+        .page {
+            max-width : 800px;
+            margin    : 0 auto;
+            padding   : 2.5rem;
+        }
+
+        /* En-tête */
+        .header {
+            display         : flex;
+            justify-content : space-between;
+            align-items     : flex-start;
+            padding-bottom  : 1.5rem;
+            border-bottom   : 2px solid #1d4ed8;
+            margin-bottom   : 2rem;
+        }
+
+        .header-brand {
+            font-size   : 1.4rem;
+            font-weight : 800;
+            color       : #1d4ed8;
+            letter-spacing: -0.02em;
+        }
+
+        .header-meta {
+            text-align  : right;
+            color       : #71717a;
+            font-size   : 0.78rem;
+        }
+
+        .header-meta strong {
+            display     : block;
+            color       : #09090b;
+            font-size   : 0.9rem;
+            font-weight : 700;
+            margin-bottom: 0.2rem;
+        }
+
+        /* Titre section */
+        .section-title {
+            font-size     : 0.65rem;
+            font-weight   : 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color         : #71717a;
+            margin-bottom : 0.75rem;
+            padding-bottom: 0.4rem;
+            border-bottom : 1px solid #e4e4e7;
+        }
+
+        /* Grille indicateurs */
+        .kpi-grid {
+            display               : grid;
+            grid-template-columns : repeat(5, 1fr);
+            gap                   : 1px;
+            background            : #e4e4e7;
+            border                : 1px solid #e4e4e7;
+            border-radius         : 8px;
+            overflow              : hidden;
+            margin-bottom         : 2rem;
+        }
+
+        .kpi {
+            background  : #fff;
+            padding     : 1rem 0.875rem;
+        }
+
+        .kpi-value {
+            font-size     : 1.75rem;
+            font-weight   : 800;
+            color         : #1d4ed8;
+            line-height   : 1;
+            margin-bottom : 0.3rem;
+            letter-spacing: -0.02em;
+        }
+
+        .kpi-label {
+            font-size : 0.72rem;
+            color     : #71717a;
+            font-weight: 500;
+            line-height: 1.3;
+        }
+
+        /* Tableaux */
+        table {
+            width           : 100%;
+            border-collapse : collapse;
+            margin-bottom   : 2rem;
+            font-size       : 0.83rem;
+        }
+
+        thead tr {
+            background    : #fafafa;
+            border-bottom : 1px solid #e4e4e7;
+        }
+
+        thead th {
+            padding        : 0.6rem 0.75rem;
+            text-align     : left;
+            font-size      : 0.65rem;
+            font-weight    : 600;
+            text-transform : uppercase;
+            letter-spacing : 0.07em;
+            color          : #71717a;
+        }
+
+        tbody td {
+            padding       : 0.6rem 0.75rem;
+            border-bottom : 1px solid #f4f4f5;
+            color         : #3f3f46;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        .table-wrap {
+            border        : 1px solid #e4e4e7;
+            border-radius : 8px;
+            overflow      : hidden;
+            margin-bottom : 2rem;
+        }
+
+        /* Pied de page */
+        .footer {
+            margin-top    : 3rem;
+            padding-top   : 1.25rem;
+            border-top    : 1px solid #e4e4e7;
+            display       : flex;
+            justify-content: space-between;
+            color         : #a1a1aa;
+            font-size     : 0.72rem;
+        }
+
+        /* Boutons non imprimés */
+        .no-print {
+            display         : flex;
+            gap             : 0.75rem;
+            justify-content : flex-end;
+            margin-bottom   : 2rem;
+        }
+
+        .btn {
+            padding         : 0.5rem 1.1rem;
+            border-radius   : 6px;
+            font-family     : 'Outfit', sans-serif;
+            font-weight     : 600;
+            font-size       : 0.875rem;
+            cursor          : pointer;
+            text-decoration : none;
+            border          : 1px solid #e4e4e7;
+            color           : #09090b;
+            background      : #fff;
+        }
+
+        .btn-primary {
+            background   : #1d4ed8;
+            border-color : #1d4ed8;
+            color        : #fff;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { font-size: 11px; }
+            .page { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <!-- Boutons -->
+    <div class="no-print">
+        <a href="{{ url_for('dashboard.index') }}" class="btn">← Retour aux statistiques</a>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer</button>
+    </div>
+
+    <!-- En-tête -->
+    <div class="header">
+        <div>
+            <div class="header-brand">Annuaire Quartier</div>
+            <div style="font-size:0.8rem;color:#71717a;margin-top:0.25rem;">
+                Fiche statistique officielle
+            </div>
+        </div>
+        <div class="header-meta">
+            <strong>Date de génération</strong>
+            {{ date_generation }}
+        </div>
+    </div>
+
+    <!-- Indicateurs globaux -->
+    <p class="section-title">Indicateurs globaux</p>
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-value">{{ nb_menages }}</div>
+            <div class="kpi-label">Ménages recensés</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-value">{{ nb_membres }}</div>
+            <div class="kpi-label">Individus enregistrés</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-value">{{ taille_moyenne }}</div>
+            <div class="kpi-label">Taille moyenne des ménages</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-value">{{ taux_scolarisation }}%</div>
+            <div class="kpi-label">Taux de scolarisation</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-value">{{ taux_activite }}%</div>
+            <div class="kpi-label">Taux d'activité (15+)</div>
+        </div>
+    </div>
+
+    <!-- Synthèse par quartier -->
+    <p class="section-title">Synthèse par quartier</p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Quartier</th>
+                    <th>Ménages</th>
+                    <th>Membres</th>
+                    <th>Taille moyenne</th>
+                    <th>Scolarisés</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in synthese_quartiers %}
+                <tr>
+                    <td><strong>{{ row.quartier }}</strong></td>
+                    <td>{{ row.nb_menages }}</td>
+                    <td>{{ row.nb_membres }}</td>
+                    <td>{{ row.taille_moyenne }}</td>
+                    <td>{{ row.nb_scolarises }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Activités des chefs de ménage -->
+    <p class="section-title">Activités des chefs de ménage</p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Activité principale</th>
+                    <th>Nombre de chefs</th>
+                    <th>Proportion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in activites_chefs %}
+                <tr>
+                    <td>{{ row.activite_principale }}</td>
+                    <td>{{ row.nb }}</td>
+                    <td>{{ row.pct }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pied de page -->
+    <div class="footer">
+        <span>Annuaire & Statistiques de Quartier</span>
+        <span>Document généré le {{ date_generation }} — Confidentiel</span>
+    </div>
+
+</div>
+</body>
+</html>

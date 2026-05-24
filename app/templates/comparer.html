@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Comparer les territoires — Annuaire de Quartier{% endblock %}
+
+{% block content %}
+
+  {# ============================================================
+     EN-TÊTE DE PAGE
+     ============================================================ #}
+  <section class="page-intro fade-up">
+    <span class="hero-eyebrow">Outil d'analyse</span>
+    <h1 class="page-intro-title">
+      Comparer les <em>territoires</em>
+    </h1>
+    <p class="page-intro-sub">
+      Confrontez plusieurs communes du District d'Abidjan ou classez-les
+      sur un indicateur précis. La moyenne d'Abidjan sert de référence
+      pour situer chaque territoire.
+    </p>
+  </section>
+
+  {% if vide %}
+
+    <div class="empty-state fade-up delay-1">
+      <div class="empty-state-icon">📊</div>
+      <p>Aucune donnée à comparer pour le moment.</p>
+      <a href="{{ url_for('menages.nouveau') }}" class="btn btn-primary">
+        Commencer le recensement →
+      </a>
+    </div>
+
+  {% else %}
+
+    {# ============================================================
+       SOUS-ONGLETS : Comparaison directe / Classement
+       ============================================================ #}
+    <div class="tabs tabs-light fade-up delay-1" id="mode-tabs">
+      <a href="{{ url_for('comparer_bp.index', mode='directe') }}"
+         class="tab {% if mode == 'directe' %}tab-active{% endif %}">
+        Comparaison directe
+      </a>
+      <a href="{{ url_for('comparer_bp.index', mode='classement') }}"
+         class="tab {% if mode == 'classement' %}tab-active{% endif %}">
+        Classement
+      </a>
+      <span class="tab-indicator"></span>
+    </div>
+
+    {# ============================================================
+       MODE 1 : COMPARAISON DIRECTE
+       ============================================================ #}
+    {% if mode == 'directe' %}
+
+      <div class="compare-config fade-up delay-2">
+        <h3 class="compare-config-title">Territoires sélectionnés</h3>
+        <p class="compare-config-help">
+          Choisissez de 2 à 4 territoires à confronter.
+          Le territoire avec la valeur la plus haute est mis en valeur en
+          <span class="text-amber text-bold">ambré</span> sur chaque ligne.
+        </p>
+
+        <form method="get" action="{{ url_for('comparer_bp.index') }}"
+              class="territory-picker" id="territory-form">
+          <input type="hidden" name="mode" value="directe">
+
+          <div class="territory-grid">
+            {% for t in tous_territoires %}
+              {% if t.slug != 'abidjan' %}
+                <label class="territory-chip
+                              {% if t.slug in slugs_selectionnes %}territory-chip-active{% endif %}">
+                  <input type="checkbox"
+                         name="territoires"
+                         value="{{ t.slug }}"
+                         {% if t.slug in slugs_selectionnes %}checked{% endif %}>
+                  <span class="territory-chip-name">{{ t.nom }}</span>
+                  <span class="territory-chip-meta">{{ t.nb_menages }} mén.</span>
+                </label>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <div class="territory-actions">
+            <span class="territory-counter" data-counter>
+              {{ slugs_selectionnes|length }} / 4 sélectionnés
+            </span>
+            <button type="submit" class="btn btn-primary">
+              Appliquer la comparaison
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {# Tableau de comparaison #}
+      <div class="compare-table-wrap fade-up delay-3">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="ct-indic">Indicateur</th>
+              {% for t in territoires_selectionnes %}
+                <th class="ct-territory">
+                  <div class="ct-territory-name">{{ t.nom }}</div>
+                  <div class="ct-territory-meta">
+                    {{ t.nb_membres }} pers. · {{ t.nb_menages }} mén.
+                  </div>
+                </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% set themes = {'demographie': 'Démographie',
+                              'economie': 'Économie',
+                              'conditions': 'Conditions de vie'} %}
+            {% set ns = namespace(theme_courant=None) %}
+
+            {% for ind in indicateurs_meta %}
+              {# Ligne de séparation thématique #}
+              {% if ind.theme != ns.theme_courant %}
+                {% set ns.theme_courant = ind.theme %}
+                <tr class="ct-theme-row">
+                  <td colspan="{{ territoires_selectionnes|length + 1 }}">
+                    {{ themes[ind.theme] }}
+                  </td>
+                </tr>
+              {% endif %}
+
+              <tr>
+                <td class="ct-indic-label">
+                  <span class="ct-indic-text">{{ ind.label }}</span>
+                  {% if ind.unite %}
+                    <span class="ct-indic-unit">{{ ind.unite }}</span>
+                  {% endif %}
+                </td>
+                {% for t in territoires_selectionnes %}
+                  {% set valeur = t.valeurs[ind.cle] %}
+                  {% set max_v = max_par_indicateur[ind.cle] %}
+                  {% set largeur = (valeur / max_v * 100) if max_v else 0 %}
+                  {% set est_leader = leader_par_indicateur[ind.cle] == t.slug %}
+
+                  <td class="ct-cell">
+                    <div class="ct-cell-bar
+                                {% if est_leader %}ct-cell-bar-leader{% endif %}">
+                      <div class="ct-cell-fill"
+                           style="width: {{ largeur|round(1) }}%"></div>
+                    </div>
+                    <div class="ct-cell-value
+                                {% if est_leader %}ct-cell-value-leader{% endif %}">
+                      {{ valeur }}{% if ind.unite and ind.unite != 'pers.' %}{{ ind.unite }}{% endif %}
+                    </div>
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    {# ============================================================
+       MODE 2 : CLASSEMENT
+       ============================================================ #}
+    {% else %}
+
+      <div class="compare-config fade-up delay-2">
+        <h3 class="compare-config-title">Indicateur de classement</h3>
+        <p class="compare-config-help">
+          Les 13 communes triées de la plus haute à la plus basse valeur.
+          La ligne en pointillés indique la
+          <span class="text-bold">moyenne d'Abidjan</span>, le territoire
+          en tête est mis en valeur en
+          <span class="text-amber text-bold">ambré</span>.
+        </p>
+
+        <form method="get" action="{{ url_for('comparer_bp.index') }}"
+              class="indicator-picker" id="indicator-form">
+          <input type="hidden" name="mode" value="classement">
+
+          <select name="indicateur"
+                  class="indicator-select"
+                  onchange="this.form.submit()">
+            {% set themes_label = {'demographie': 'Démographie',
+                                    'economie': 'Économie',
+                                    'conditions': 'Conditions de vie'} %}
+            {% for theme_cle, theme_nom in themes_label.items() %}
+              <optgroup label="{{ theme_nom }}">
+                {% for ind in indicateurs_meta %}
+                  {% if ind.theme == theme_cle %}
+                    <option value="{{ ind.cle }}"
+                            {% if ind.cle == indicateur_actif.cle %}selected{% endif %}>
+                      {{ ind.label }}
+                    </option>
+                  {% endif %}
+                {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+
+      {# Graphique de classement #}
+      <div class="ranking-wrap fade-up delay-3">
+        <div class="ranking-header">
+          <div class="ranking-title">{{ indicateur_actif.label }}</div>
+          <div class="ranking-ref">
+            Moyenne d'Abidjan :
+            <span class="ranking-ref-value">
+              {{ moyenne_abidjan }}{% if indicateur_actif.unite %}{{ indicateur_actif.unite }}{% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="ranking-chart"
+     data-ref-pos="{{ ((moyenne_abidjan / valeur_max_classement * 100) if valeur_max_classement else 0)|round(2) }}">
+  {# Ligne de référence verticale (moyenne d'Abidjan), positionnée via JS #}
+  <div class="ranking-ref-line">
+    <span class="ranking-ref-line-label">Abidjan</span>
+  </div>
+          {% for t in communes_classees %}
+            {% set valeur = t.valeurs[indicateur_actif.cle] %}
+            {% set largeur = (valeur / valeur_max_classement * 100) if valeur_max_classement else 0 %}
+            {% set est_leader = loop.first %}
+            {% set au_dessus_moyenne = valeur >= moyenne_abidjan %}
+
+            <div class="ranking-row {% if est_leader %}ranking-row-leader{% endif %}">
+              <div class="ranking-rank">{{ loop.index }}</div>
+              <div class="ranking-name">{{ t.nom }}</div>
+              <div class="ranking-bar-wrap">
+                <div class="ranking-bar
+                            {% if est_leader %}ranking-bar-leader{% endif %}
+                            {% if not est_leader and au_dessus_moyenne %}ranking-bar-above{% endif %}"
+                     style="width: {{ largeur|round(1) }}%"
+                     data-target-width="{{ largeur|round(1) }}">
+                </div>
+              </div>
+              <div class="ranking-value
+                          {% if est_leader %}ranking-value-leader{% endif %}">
+                {{ valeur }}{% if indicateur_actif.unite %}{{ indicateur_actif.unite }}{% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    {% endif %}
+
+  {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+  {% if not vide %}
+    <script src="{{ url_for('static', filename='js/comparer.js') }}"></script>
+  {% endif %}
+{% endblock %}

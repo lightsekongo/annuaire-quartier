@@ -1,0 +1,4 @@
+<circle cx="12" cy="12" r="9"/>
+<path d="M12 7v10"/>
+<path d="M9 9h4.5a2.5 2.5 0 0 1 0 5H9"/>
+<path d="M9 14h5"/>

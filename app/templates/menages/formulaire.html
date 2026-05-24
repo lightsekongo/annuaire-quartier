@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if menage %}Modifier {{ menage.nom_menage }}{% else %}Nouveau ménage{% endif %}
+  — Annuaire de quartier
+{% endblock %}
+
+{% block content %}
+
+  {# ─── Lien retour ─── #}
+  <a href="{{ url_for('menages_bp.liste') }}" class="back-link fade-in">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    Retour à la liste
+  </a>
+
+  {# ─── En-tête ─── #}
+  <div class="page-intro fade-up">
+    <span class="hero-eyebrow">
+      {% if menage %}Modification{% else %}Nouveau ménage{% endif %}
+    </span>
+    <h2 class="page-intro-title">
+      {% if menage %}
+        Modifier <em>{{ menage.nom_menage }}</em>
+      {% else %}
+        Enregistrer un <em>nouveau ménage</em>
+      {% endif %}
+    </h2>
+    <p class="page-intro-sub">
+      {% if menage %}
+        Mettez à jour les informations du ménage. Les champs marqués
+        d'un astérisque (*) sont obligatoires.
+      {% else %}
+        Remplissez le formulaire pour enregistrer un nouveau ménage
+        dans le recensement. Vous pourrez ajouter les membres du foyer
+        après la création.
+      {% endif %}
+    </p>
+  </div>
+
+  {# ─── Messages flash ─── #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="flash flash-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {# ─── Formulaire ─── #}
+  <form method="POST"
+        action="{% if menage %}{{ url_for('menages_bp.modifier', id_menage=menage.id_menage) }}{% else %}{{ url_for('menages_bp.nouveau') }}{% endif %}"
+        class="form-long fade-up delay-1"
+        autocomplete="off">
+
+    {# ═══════════════════════════════════════════════════════ #}
+    {# SECTION 1 — Identification                              #}
+    {# ═══════════════════════════════════════════════════════ #}
+    <section class="form-section">
+      <header class="form-section-header">
+        <span class="form-section-num">1</span>
+        <div>
+          <h3 class="form-section-title">Identification du ménage</h3>
+          <p class="form-section-desc">
+            Informations de base pour repérer le ménage dans le recensement.
+          </p>
+        </div>
+      </header>
+
+      <div class="form-section-body">
+        <div class="form-row">
+          <label for="nom_menage" class="form-label-block">
+            Nom du ménage <span class="req">*</span>
+            <input type="text"
+                   id="nom_menage"
+                   name="nom_menage"
+                   required
+                   maxlength="100"
+                   placeholder="Ex. Famille Koffi"
+                   value="{{ form_data.nom_menage or '' }}">
+          </label>
+
+          <label for="date_recensement" class="form-label-block">
+            Date du recensement
+            <input type="date"
+                   id="date_recensement"
+                   name="date_recensement"
+                   value="{{ form_data.date_recensement or '' }}">
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label for="id_commune" class="form-label-block">
+            Commune <span class="req">*</span>
+            <select id="id_commune" name="id_commune" required class="form-select">
+              <option value="">— Choisir une commune —</option>
+              {% for c in communes %}
+  <option value="{{ c.id_commune }}"
+          {% if (form_data.id_commune|string) == (c.id_commune|string) %}selected{% endif %}>
+    {{ c.nom }}
+  </option>
+{% endfor %}
+            </select>
+          </label>
+
+          <label for="quartier" class="form-label-block">
+            Quartier <span class="req">*</span>
+            <select id="quartier" name="quartier" required class="form-select"
+                    {% if not form_data.id_commune %}disabled{% endif %}>
+              <option value="">— Choisir d'abord une commune —</option>
+              {# Les options sont remplies dynamiquement par JS selon la commune choisie #}
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    {# ═══════════════════════════════════════════════════════ #}
+    {# SECTION 2 — Logement                                    #}
+    {# ═══════════════════════════════════════════════════════ #}
+    <section class="form-section">
+      <header class="form-section-header">
+        <span class="form-section-num">2</span>
+        <div>
+          <h3 class="form-section-title">Logement</h3>
+          <p class="form-section-desc">
+            Caractéristiques du logement occupé par le ménage.
+          </p>
+        </div>
+      </header>
+
+      <div class="form-section-body">
+        <div class="form-row">
+          <label for="type_logement" class="form-label-block">
+            Type de logement
+            <select id="type_logement" name="type_logement" class="form-select">
+              <option value="">— Non précisé —</option>
+              {% for opt in ["Maison individuelle", "Appartement", "Cour commune", "Studio", "Autre"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.type_logement == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label for="statut_occupation" class="form-label-block">
+            Statut d'occupation
+            <select id="statut_occupation" name="statut_occupation" class="form-select">
+              <option value="">— Non précisé —</option>
+              {% for opt in ["Propriétaire", "Locataire", "Hébergé gratuitement", "Logement de fonction"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.statut_occupation == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label for="nombre_pieces" class="form-label-block">
+            Nombre de pièces
+            <input type="number"
+                   id="nombre_pieces"
+                   name="nombre_pieces"
+                   min="0"
+                   max="20"
+                   placeholder="Ex. 3"
+                   value="{{ form_data.nombre_pieces or '' }}">
+          </label>
+          <div></div> {# colonne vide pour aligner #}
+        </div>
+      </div>
+    </section>
+
+    {# ═══════════════════════════════════════════════════════ #}
+    {# SECTION 3 — Accès aux services de base                  #}
+    {# ═══════════════════════════════════════════════════════ #}
+    <section class="form-section">
+      <header class="form-section-header">
+        <span class="form-section-num">3</span>
+        <div>
+          <h3 class="form-section-title">Accès aux services de base</h3>
+          <p class="form-section-desc">
+            Eau, assainissement, énergie et gestion des ordures.
+          </p>
+        </div>
+      </header>
+
+      <div class="form-section-body">
+        <div class="form-row">
+          <label for="source_eau" class="form-label-block">
+            Source d'eau principale
+            <select id="source_eau" name="source_eau" class="form-select">
+              <option value="">— Non précisé —</option>
+              {% for opt in ["Robinet maison", "Robinet cour", "Borne fontaine", "Puits", "Eau en sachet"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.source_eau == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label for="type_toilettes" class="form-label-block">
+            Type de toilettes
+            <select id="type_toilettes" name="type_toilettes" class="form-select">
+              <option value="">— Non précisé —</option>
+              {% for opt in ["WC avec chasse", "Latrine améliorée", "Latrine simple", "Aucune"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.type_toilettes == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label for="source_eclairage" class="form-label-block">
+            Source d'éclairage
+            <select id="source_eclairage" name="source_eclairage" class="form-select">
+              <option value="">— Non précisé —</option>
+              {% for opt in ["Électricité (CIE)", "Solaire", "Lampe à pétrole", "Bougie", "Aucune"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.source_eclairage == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label for="gestion_ordures" class="form-label-block">
+            Gestion des ordures
+            <select id="gestion_ordures" name="gestion_ordures" class="form-select">
+              <option value="">— Non précisé —</option>
+              {% for opt in ["Pré-collecte", "Bac à ordures", "Brûlées", "Enterrées", "Dans la nature"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.gestion_ordures == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    {# ═══════════════════════════════════════════════════════ #}
+    {# SECTION 4 — Biens durables                              #}
+    {# ═══════════════════════════════════════════════════════ #}
+    <section class="form-section">
+      <header class="form-section-header">
+        <span class="form-section-num">4</span>
+        <div>
+          <h3 class="form-section-title">Biens durables possédés</h3>
+          <p class="form-section-desc">
+            Cochez les biens présents dans le ménage. Utilisé pour
+            l'indice d'équipement.
+          </p>
+        </div>
+      </header>
+
+      <div class="form-section-body">
+        <div class="biens-grid">
+          {% set biens_actuels = form_data.biens_durables or [] %}
+          {% for bien in ["Frigo", "TV", "Climatiseur", "Voiture", "Moto", "Internet", "Smartphone", "Ordinateur"] %}
+            <label class="bien-checkbox">
+              <input type="checkbox"
+                     name="biens_durables"
+                     value="{{ bien }}"
+                     {% if bien in biens_actuels %}checked{% endif %}>
+              <span class="bien-checkbox-box">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="3"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span class="bien-checkbox-label">{{ bien }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    {# ─── Actions ─── #}
+    <div class="form-actions form-actions-end">
+      <a href="{% if menage %}{{ url_for('menages_bp.fiche', id_menage=menage.id_menage) }}{% else %}{{ url_for('menages_bp.liste') }}{% endif %}"
+         class="btn btn-secondary">Annuler</a>
+      <button type="submit" class="btn btn-primary btn-lg">
+        {% if menage %}Enregistrer les modifications{% else %}Créer le ménage{% endif %}
+      </button>
+    </div>
+
+  </form>
+
+  {# Données pour le JS du formulaire (sélecteur dépendant + valeur initiale) #}
+  <script>
+    window.FORMULAIRE_DATA = {
+      quartiers_par_commune: {{ quartiers_par_commune|tojson }},
+      quartier_initial: {{ (form_data.quartier or '')|tojson }},
+    };
+  </script>
+
+  <script src="{{ url_for('static', filename='js/formulaire-menage.js') }}"></script>
+
+{% endblock %}

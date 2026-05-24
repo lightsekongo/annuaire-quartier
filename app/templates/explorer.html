@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Explorer — Annuaire de quartier{% endblock %}
+
+{% block content %}
+
+  {# ─── En-tête ─── #}
+  <div class="page-intro fade-up">
+    <span class="hero-eyebrow">Explorer</span>
+    <h2 class="page-intro-title">
+      <em>Atelier</em> de visualisation libre
+    </h2>
+    <p class="page-intro-sub">
+      Choisissez une variable principale, un croisement éventuel et des
+      filtres : le graphique le plus pertinent est généré automatiquement
+      selon la nature des variables choisies.
+    </p>
+  </div>
+
+  {% if vide %}
+
+    <div class="empty-state fade-up delay-1">
+      <div class="empty-state-icon">📭</div>
+      <p>Aucune donnée disponible pour l'exploration.</p>
+      <a href="{{ url_for('menages_bp.nouveau') }}" class="btn btn-primary">
+        Commencer le recensement
+      </a>
+    </div>
+
+  {% else %}
+
+    {# ─── Bandeau de contexte ─── #}
+    <div class="explorer-context fade-up delay-1">
+      <span class="explorer-context-label">Périmètre d'analyse :</span>
+      <span class="explorer-context-stat">
+        <strong>{{ nb_personnes }}</strong> personnes
+      </span>
+      <span class="explorer-context-sep">·</span>
+      <span class="explorer-context-stat">
+        <strong>{{ nb_menages }}</strong> ménages
+      </span>
+      <span class="explorer-context-sep">·</span>
+      <span class="explorer-context-stat">
+        13 communes du District autonome d'Abidjan
+      </span>
+    </div>
+
+    {# ─── Layout principal en 2 colonnes ─── #}
+    <div class="explorer-layout fade-up delay-2">
+
+      {# ═══════ COLONNE DE GAUCHE — Sélecteurs ═══════ #}
+      <aside class="explorer-controls">
+
+        {# Variable principale #}
+        <div class="explorer-control">
+          <label for="var-principale" class="explorer-control-label">
+            <span class="explorer-control-num">1</span>
+            Variable principale
+          </label>
+          <select id="var-principale" class="form-select">
+            <option value="">— Choisir une variable —</option>
+            <optgroup label="Sur les personnes">
+              {% for v in variables %}
+                {% if v.source == 'membre' %}
+                  <option value="{{ v.cle }}">{{ v.label }}</option>
+                {% endif %}
+              {% endfor %}
+            </optgroup>
+            <optgroup label="Sur le logement et le ménage">
+              {% for v in variables %}
+                {% if v.source == 'menage' %}
+                  <option value="{{ v.cle }}">{{ v.label }}</option>
+                {% endif %}
+              {% endfor %}
+            </optgroup>
+          </select>
+          <p class="explorer-control-hint">
+            La caractéristique que l'on souhaite étudier.
+          </p>
+        </div>
+
+        {# Variable de croisement #}
+        <div class="explorer-control">
+          <label for="var-croisement" class="explorer-control-label">
+            <span class="explorer-control-num">2</span>
+            Croiser avec <span class="explorer-control-opt">(optionnel)</span>
+          </label>
+          <select id="var-croisement" class="form-select">
+            <option value="">— Aucun croisement —</option>
+            <optgroup label="Sur les personnes">
+              {% for v in variables %}
+                {% if v.source == 'membre' %}
+                  <option value="{{ v.cle }}">{{ v.label }}</option>
+                {% endif %}
+              {% endfor %}
+            </optgroup>
+            <optgroup label="Sur le logement et le ménage">
+              {% for v in variables %}
+                {% if v.source == 'menage' %}
+                  <option value="{{ v.cle }}">{{ v.label }}</option>
+                {% endif %}
+              {% endfor %}
+            </optgroup>
+          </select>
+          <p class="explorer-control-hint">
+            Étudier la variable selon une autre dimension.
+          </p>
+        </div>
+
+        {# Section filtres #}
+        <div class="explorer-section">
+          <h3 class="explorer-section-title">
+            <span class="explorer-control-num">3</span>
+            Filtres
+          </h3>
+
+          {# Filtre commune #}
+          <div class="explorer-control">
+            <label for="filtre-commune" class="explorer-filter-label">
+              Commune
+            </label>
+            <select id="filtre-commune" class="form-select">
+              <option value="">Toutes les communes</option>
+              {% for c in communes %}
+                <option value="{{ c.nom }}">{{ c.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Filtre sexe #}
+          <div class="explorer-control">
+            <label for="filtre-sexe" class="explorer-filter-label">
+              Sexe
+            </label>
+            <select id="filtre-sexe" class="form-select">
+              <option value="">Tous</option>
+              <option value="Masculin">Masculin</option>
+              <option value="Féminin">Féminin</option>
+            </select>
+          </div>
+
+          {# Filtre tranche d'âge #}
+          <div class="explorer-control">
+            <label for="filtre-age" class="explorer-filter-label">
+              Tranche d'âge
+            </label>
+            <select id="filtre-age" class="form-select">
+              <option value="">Tous les âges</option>
+              <option value="0-14">0-14 ans</option>
+              <option value="15-29">15-29 ans</option>
+              <option value="30-44">30-44 ans</option>
+              <option value="45-59">45-59 ans</option>
+              <option value="60+">60 ans et +</option>
+            </select>
+          </div>
+        </div>
+
+        {# Bouton reset #}
+        <button type="button" id="btn-reset" class="btn btn-secondary explorer-reset">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          Réinitialiser
+        </button>
+      </aside>
+
+      {# ═══════ COLONNE DE DROITE — Affichage ═══════ #}
+      <main class="explorer-results">
+
+        {# État initial — pas de sélection #}
+        <div class="explorer-empty" id="explorer-empty">
+          <div class="explorer-empty-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </div>
+          <h3 class="explorer-empty-title">Prêt pour l'exploration</h3>
+          <p class="explorer-empty-desc">
+            Sélectionnez une <strong>variable principale</strong> à gauche
+            pour générer votre première visualisation.
+          </p>
+        </div>
+
+        {# Bloc résultat (masqué initialement) #}
+        <div class="explorer-output" id="explorer-output" style="display:none">
+
+          {# Titre dynamique du graphique #}
+          <header class="explorer-output-header">
+            <div class="explorer-output-meta">
+              <span class="explorer-output-type" id="output-type">Barres</span>
+              <span class="explorer-output-count" id="output-count">
+                0 observations
+              </span>
+            </div>
+            <h3 class="explorer-output-title" id="output-title">
+              Titre du graphique
+            </h3>
+            <p class="explorer-output-sub" id="output-sub"></p>
+          </header>
+
+          {# Zone du graphique Chart.js #}
+          <div class="explorer-chart-wrap">
+            <canvas id="explorer-chart"></canvas>
+          </div>
+
+          {# Tableau des données calculées #}
+          <div class="explorer-table-wrap">
+            <div class="explorer-table-header">
+              <h4 class="explorer-table-title">Données du graphique</h4>
+              <button type="button" id="btn-export-csv" class="btn btn-ghost btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter CSV
+              </button>
+            </div>
+            <div class="explorer-table-scroll">
+              <table class="explorer-table" id="explorer-table">
+                <thead></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+    </div>
+
+    {# ─── Données injectées pour le JS ─── #}
+    <script>
+      window.EXPLORER_DATA = {
+        dataset: {{ dataset_json | safe }},
+        variables: {{ variables_json | safe }}
+      };
+    </script>
+    <script src="{{ url_for('static', filename='js/explorer.js') }}"></script>
+
+  {% endif %}
+
+{% endblock %}

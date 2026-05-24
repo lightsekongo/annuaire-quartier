@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Territoires — Annuaire de Quartier{% endblock %}
+
+{% block head_extra %}
+  {# Leaflet : bibliothèque cartographique légère et standard #}
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin="">
+{% endblock %}
+
+{% block content %}
+
+  {# ============================================================
+     EN-TÊTE DE PAGE
+     ============================================================ #}
+  <section class="page-intro fade-up">
+    <span class="hero-eyebrow">Annuaire visuel</span>
+    <h1 class="page-intro-title">
+      Les <em>territoires</em> du district
+    </h1>
+    <p class="page-intro-sub">
+      Carte interactive des 13 communes du District autonome d'Abidjan.
+      Choisissez un indicateur pour recolorer la carte, cliquez sur
+      une commune pour voir sa fiche détaillée.
+    </p>
+  </section>
+
+  {% if vide %}
+
+    <div class="empty-state fade-up delay-1">
+      <div class="empty-state-icon">🗺️</div>
+      <p>Aucune donnée à cartographier pour le moment.</p>
+      <a href="{{ url_for('menages.nouveau') }}" class="btn btn-primary">
+        Commencer le recensement →
+      </a>
+    </div>
+
+  {% else %}
+
+    {# ============================================================
+       SÉLECTEUR D'INDICATEUR
+       ============================================================ #}
+    <div class="map-controls fade-up delay-1">
+      <label for="map-indicator" class="map-controls-label">
+        Indicateur affiché sur la carte
+      </label>
+      <select id="map-indicator" class="indicator-select">
+        {% set themes_label = {'demographie': 'Démographie',
+                                'economie': 'Économie',
+                                'conditions': 'Conditions de vie'} %}
+        {% for theme_cle, theme_nom in themes_label.items() %}
+          <optgroup label="{{ theme_nom }}">
+            {% for ind in indicateurs_meta %}
+              {% if ind.theme == theme_cle %}
+                <option value="{{ ind.cle }}"
+                        data-unite="{{ ind.unite }}">
+                  {{ ind.label }}
+                </option>
+              {% endif %}
+            {% endfor %}
+          </optgroup>
+        {% endfor %}
+      </select>
+
+      {# Légende dynamique du dégradé de couleurs #}
+      <div class="map-legend">
+        <span class="map-legend-label">Faible</span>
+        <div class="map-legend-gradient"></div>
+        <span class="map-legend-label">Élevé</span>
+      </div>
+    </div>
+
+    {# ============================================================
+       CARTE + PANNEAU DE DÉTAIL
+       ============================================================ #}
+    <div class="map-layout fade-up delay-2">
+
+      {# La carte Leaflet #}
+      <div class="map-wrap">
+        <div id="map"></div>
+
+        {# Panneau d'info au survol (tooltip flottant) #}
+        <div class="map-hover-info" id="map-hover" hidden>
+          <div class="map-hover-name"></div>
+          <div class="map-hover-value"></div>
+        </div>
+
+        {# Pop-up de détail d'un quartier (apparaît au clic sur un point) #}
+        <div class="quartier-popup" id="quartier-popup" hidden>
+          <button type="button" class="quartier-popup-close" id="quartier-popup-close"
+                  aria-label="Fermer">&times;</button>
+
+          <div class="quartier-popup-header">
+            <span class="quartier-popup-eyebrow" id="qp-commune"></span>
+            <h3 class="quartier-popup-name" id="qp-name"></h3>
+          </div>
+
+          <div class="quartier-popup-body">
+
+            {# Volumétrie : 3 grandes statistiques #}
+            <div class="qp-section">
+              <div class="qp-section-title">Volumétrie</div>
+              <div class="qp-grid">
+                <div class="qp-stat">
+                  <div class="qp-stat-value" id="qp-nb-menages"></div>
+                  <div class="qp-stat-label">Ménages</div>
+                </div>
+                <div class="qp-stat">
+                  <div class="qp-stat-value" id="qp-nb-personnes"></div>
+                  <div class="qp-stat-label">Personnes</div>
+                </div>
+                <div class="qp-stat">
+                  <div class="qp-stat-value" id="qp-taille-moyenne"></div>
+                  <div class="qp-stat-label">Pers. / ménage</div>
+                </div>
+              </div>
+            </div>
+
+            {# Composition : 3 cartes au même format que Volumétrie #}
+            <div class="qp-section">
+              <div class="qp-section-title">Composition</div>
+              <div class="qp-grid">
+                <div class="qp-stat">
+                  <div class="qp-stat-value" id="qp-masculinite"></div>
+                  <div class="qp-stat-label">H pour 100 F</div>
+                </div>
+                <div class="qp-stat">
+                  <div class="qp-stat-value" id="qp-age-median"></div>
+                  <div class="qp-stat-label">Âge médian</div>
+                </div>
+                <div class="qp-stat">
+                  <div class="qp-stat-value" id="qp-moins-15"></div>
+                  <div class="qp-stat-label">Moins de 15 ans</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      {# Panneau de détail à droite #}
+      <aside class="territory-panel" id="territory-panel">
+        <div class="territory-panel-header">
+          <span class="territory-panel-eyebrow"
+                id="panel-type">Vue d'ensemble</span>
+          <h2 class="territory-panel-name" id="panel-name">
+            {{ territoire_initial.nom }}
+          </h2>
+          <div class="territory-panel-meta" id="panel-meta">
+            <span class="text-bold numeric">
+              {{ territoire_initial.nb_membres }}
+            </span> personnes recensées dans
+            <span class="text-bold numeric">
+              {{ territoire_initial.nb_menages }}
+            </span> ménages
+          </div>
+        </div>
+
+        <div class="territory-panel-body">
+
+          {# Bloc Démographie #}
+          <div class="panel-block">
+            <div class="panel-block-title">
+              <span class="panel-block-dot panel-block-dot-1"></span>
+              Démographie
+            </div>
+            <div class="panel-stats" data-stats="demographie">
+              {# Rempli dynamiquement par JS #}
+            </div>
+          </div>
+
+          {# Bloc Économie #}
+          <div class="panel-block">
+            <div class="panel-block-title">
+              <span class="panel-block-dot panel-block-dot-2"></span>
+              Économie
+            </div>
+            <div class="panel-stats" data-stats="economie">
+              {# Rempli dynamiquement par JS #}
+            </div>
+          </div>
+
+          {# Bloc Conditions de vie #}
+          <div class="panel-block">
+            <div class="panel-block-title">
+              <span class="panel-block-dot panel-block-dot-3"></span>
+              Conditions de vie
+            </div>
+            <div class="panel-stats" data-stats="conditions">
+              {# Rempli dynamiquement par JS #}
+            </div>
+          </div>
+            {# Bloc Quartiers — visible uniquement quand une commune est sélectionnée #}
+          <div class="panel-block panel-quartiers" id="panel-quartiers" hidden>
+            <div class="panel-block-title">
+              <span class="panel-block-dot panel-block-dot-quartier"></span>
+              Quartiers <span class="panel-quartiers-count" id="quartiers-count"></span>
+            </div>
+            <div class="quartiers-list" id="quartiers-list">
+              {# Rempli dynamiquement par JS #}
+            </div>
+          </div>
+        </div>
+
+        <div class="territory-panel-footer">
+          <p class="text-xs text-muted" id="panel-hint">
+            Cliquez sur une commune de la carte pour la consulter en détail.
+          </p>
+        </div>
+      </aside>
+
+    </div>
+
+  {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+  {% if not vide %}
+    {# Données injectées du serveur vers le navigateur #}
+    <script>
+      window.TERRITOIRES_DATA = {
+        profils: {{ profils_json|safe }},
+        bornes: {{ bornes_json|safe }},
+        indicateurs: {{ indicateurs_json|safe }},
+        abidjan: {{ abidjan_json|safe }},
+        quartiers: {{ quartiers_json|safe }},
+      };
+    </script>
+
+    {# Leaflet (bibliothèque cartographique) #}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    {# Notre script applicatif #}
+    <script src="{{ url_for('static', filename='js/territoires.js') }}"></script>
+  {% endif %}
+{% endblock %}

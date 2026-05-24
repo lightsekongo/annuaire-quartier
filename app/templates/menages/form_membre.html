@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if membre %}Modifier {{ membre.prenom }} {{ membre.nom }}{% else %}Nouveau membre{% endif %}
+  — {{ menage.nom_menage }}
+{% endblock %}
+
+{% block content %}
+
+  {# ─── Lien retour ─── #}
+  <a href="{{ url_for('menages_bp.fiche', id_menage=menage.id_menage) }}"
+     class="back-link fade-in">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    Retour à la fiche du ménage
+  </a>
+
+  {# ─── En-tête ─── #}
+  <div class="page-intro fade-up">
+    <span class="hero-eyebrow">
+      {% if membre %}Modification{% else %}Nouveau membre{% endif %}
+    </span>
+    <h2 class="page-intro-title">
+      {% if membre %}
+        Modifier <em>{{ membre.prenom }} {{ membre.nom }}</em>
+      {% else %}
+        Ajouter un <em>membre</em>
+      {% endif %}
+    </h2>
+    <p class="page-intro-sub">
+      Ménage <span class="text-bold">{{ menage.nom_menage }}</span> —
+      {{ menage.commune }}, {{ menage.quartier }}.
+      Les champs marqués d'un astérisque (*) sont obligatoires.
+    </p>
+  </div>
+
+  {# ─── Messages flash ─── #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="flash flash-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {# ─── Formulaire ─── #}
+  <form method="POST"
+        action="{% if membre %}{{ url_for('membres_bp.modifier', id_membre=membre.id_membre) }}{% else %}{{ url_for('membres_bp.nouveau', id_menage=menage.id_menage) }}{% endif %}"
+        class="form-long fade-up delay-1"
+        autocomplete="off">
+
+    {# ═══════════════════════════════════════════════════════ #}
+    {# SECTION 1 — État civil                                  #}
+    {# ═══════════════════════════════════════════════════════ #}
+    <section class="form-section">
+      <header class="form-section-header">
+        <span class="form-section-num">1</span>
+        <div>
+          <h3 class="form-section-title">État civil</h3>
+          <p class="form-section-desc">
+            Informations d'identité du membre.
+          </p>
+        </div>
+      </header>
+
+      <div class="form-section-body">
+        <div class="form-row">
+          <label for="prenom" class="form-label-block">
+            Prénom <span class="req">*</span>
+            <input type="text" id="prenom" name="prenom" required maxlength="60"
+                   placeholder="Ex. Aïcha"
+                   value="{{ form_data.prenom or '' }}">
+          </label>
+
+          <label for="nom" class="form-label-block">
+            Nom <span class="req">*</span>
+            <input type="text" id="nom" name="nom" required maxlength="60"
+                   placeholder="Ex. Koffi"
+                   value="{{ form_data.nom or '' }}">
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label for="sexe" class="form-label-block">
+            Sexe <span class="req">*</span>
+            <select id="sexe" name="sexe" required class="form-select">
+              <option value="">— Choisir —</option>
+              {% for opt in ["Masculin", "Féminin"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.sexe == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label for="date_naissance" class="form-label-block">
+            Date de naissance <span class="req">*</span>
+            <input type="date" id="date_naissance" name="date_naissance" required
+                   value="{{ form_data.date_naissance or '' }}">
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label for="lien_chef" class="form-label-block">
+            Lien avec le chef de ménage
+            <select id="lien_chef" name="lien_chef" class="form-select">
+              <option value="">— Non précisé —</option>
+              {% for opt in ["Chef", "Conjoint(e)", "Enfant", "Parent", "Frère / Sœur", "Autre parent", "Sans lien"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.lien_chef == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label for="situation_matrimoniale" class="form-label-block">
+            Situation matrimoniale
+            <select id="situation_matrimoniale" name="situation_matrimoniale" class="form-select">
+              {% for opt in ["Célibataire", "Marié(e)", "Veuf(ve)", "Divorcé(e)", "Union libre"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.situation_matrimoniale == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    {# ═══════════════════════════════════════════════════════ #}
+    {# SECTION 2 — Éducation                                   #}
+    {# ═══════════════════════════════════════════════════════ #}
+    <section class="form-section">
+      <header class="form-section-header">
+        <span class="form-section-num">2</span>
+        <div>
+          <h3 class="form-section-title">Éducation</h3>
+          <p class="form-section-desc">
+            Niveau d'études et alphabétisation.
+          </p>
+        </div>
+      </header>
+
+      <div class="form-section-body">
+        <div class="form-row">
+          <label for="niveau_instruction" class="form-label-block">
+            Niveau d'instruction
+            <select id="niveau_instruction" name="niveau_instruction" class="form-select">
+              {% for opt in ["Aucun", "Primaire", "Secondaire", "Supérieur"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.niveau_instruction == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label for="sait_lire_ecrire" class="form-label-block">
+            Sait lire et écrire en français
+            <select id="sait_lire_ecrire" name="sait_lire_ecrire" class="form-select">
+              {% for opt in ["Oui", "Non"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.sait_lire_ecrire == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    {# ═══════════════════════════════════════════════════════ #}
+    {# SECTION 3 — Activité économique                         #}
+    {# ═══════════════════════════════════════════════════════ #}
+    <section class="form-section">
+      <header class="form-section-header">
+        <span class="form-section-num">3</span>
+        <div>
+          <h3 class="form-section-title">Activité économique</h3>
+          <p class="form-section-desc">
+            Situation professionnelle et secteur d'activité.
+          </p>
+        </div>
+      </header>
+
+      <div class="form-section-body">
+        <div class="form-row">
+          <label for="situation_activite" class="form-label-block">
+            Situation d'activité
+            <select id="situation_activite" name="situation_activite" class="form-select">
+              {% for opt in ["Actif occupé", "Chômeur", "Inactif"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.situation_activite == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label for="type_emploi" class="form-label-block">
+            Type d'emploi
+            <select id="type_emploi" name="type_emploi" class="form-select">
+              <option value="">— Non applicable —</option>
+              {% for opt in ["Salarié(e)", "Indépendant(e)", "Aide familial(e)", "Apprenti(e)"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.type_emploi == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label for="secteur_emploi" class="form-label-block">
+            Secteur d'emploi
+            <select id="secteur_emploi" name="secteur_emploi" class="form-select">
+              <option value="">— Non applicable —</option>
+              {% for opt in ["Formel", "Informel", "Public"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.secteur_emploi == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div></div>
+        </div>
+      </div>
+    </section>
+
+    {# ═══════════════════════════════════════════════════════ #}
+    {# SECTION 4 — Documents et santé                          #}
+    {# ═══════════════════════════════════════════════════════ #}
+    <section class="form-section">
+      <header class="form-section-header">
+        <span class="form-section-num">4</span>
+        <div>
+          <h3 class="form-section-title">Documents et santé</h3>
+          <p class="form-section-desc">
+            Pièce d'identité et état de santé.
+          </p>
+        </div>
+      </header>
+
+      <div class="form-section-body">
+        <div class="form-row">
+          <label for="piece_identite" class="form-label-block">
+            Pièce d'identité
+            <select id="piece_identite" name="piece_identite" class="form-select">
+              {% for opt in ["CNI", "Passeport", "Permis de conduire", "Aucune"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.piece_identite == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label for="handicap" class="form-label-block">
+            Handicap éventuel
+            <select id="handicap" name="handicap" class="form-select">
+              {% for opt in ["Aucun", "Moteur", "Visuel", "Auditif", "Mental", "Autre"] %}
+                <option value="{{ opt }}"
+                        {% if form_data.handicap == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    {# ─── Actions ─── #}
+    <div class="form-actions form-actions-end">
+      <a href="{{ url_for('menages_bp.fiche', id_menage=menage.id_menage) }}"
+         class="btn btn-secondary">Annuler</a>
+      <button type="submit" class="btn btn-primary btn-lg">
+        {% if membre %}Enregistrer les modifications{% else %}Ajouter le membre{% endif %}
+      </button>
+    </div>
+
+  </form>
+
+{% endblock %}

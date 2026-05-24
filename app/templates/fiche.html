@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Fiche imprimable — {{ territoire.nom }}
+{% endblock %}
+
+{% block content %}
+
+{% if vide %}
+  <div class="empty-state">
+    <p>Aucune donnée disponible pour générer la fiche.</p>
+  </div>
+{% else %}
+
+  {# ─── Barre d'actions (masquée à l'impression) ─── #}
+  <div class="fiche-actions no-print fade-in">
+    <a href="{{ url_for('menages_bp.index') }}" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      Retour à l'accueil
+    </a>
+
+    <div class="fiche-actions-right">
+      <label class="fiche-select-wrap">
+        <span class="fiche-select-label">Territoire :</span>
+        <select id="select-territoire" class="form-select">
+          <option value="abidjan"
+                  {% if slug_actif == 'abidjan' %}selected{% endif %}>
+            Abidjan (ensemble)
+          </option>
+          {% for c in communes %}
+            <option value="{{ c.slug }}"
+                    {% if slug_actif == c.slug %}selected{% endif %}>
+              {{ c.nom }}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <button type="button" class="btn btn-primary" id="btn-imprimer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        Imprimer / Télécharger PDF
+      </button>
+    </div>
+  </div>
+
+  {# ─── DÉBUT DE LA FICHE IMPRIMABLE ─── #}
+  <article class="fiche-doc">
+
+    {# En-tête institutionnel #}
+    <header class="fiche-doc-header">
+      <div class="fiche-doc-eyebrow">
+        Annuaire Quartier — District autonome d'Abidjan
+      </div>
+      <h1 class="fiche-doc-title">
+        Fiche statistique — <em>{{ territoire.nom }}</em>
+      </h1>
+      <div class="fiche-doc-meta">
+        <span>
+          {% if type_fiche == 'ensemble' %}
+            Ensemble des 13 communes et sous-préfectures
+          {% else %}
+            {% if territoire.type == 'sous_prefecture' %}
+              Sous-préfecture
+            {% else %}
+              Commune urbaine
+            {% endif %}
+          {% endif %}
+        </span>
+        <span class="fiche-doc-sep">·</span>
+        <span>
+          Extraction du
+          {{ date_extraction.strftime('%d/%m/%Y') }}
+        </span>
+      </div>
+    </header>
+
+    {# Volumétrie #}
+    <section class="fiche-doc-section">
+      <h2 class="fiche-doc-h2">Volumétrie du recensement</h2>
+      <div class="fiche-doc-volumetrie">
+        <div class="fiche-doc-stat">
+          <div class="fiche-doc-stat-value">{{ territoire.nb_menages }}</div>
+          <div class="fiche-doc-stat-label">
+            Ménages recensés
+          </div>
+        </div>
+        <div class="fiche-doc-stat">
+          <div class="fiche-doc-stat-value">{{ territoire.nb_membres }}</div>
+          <div class="fiche-doc-stat-label">
+            Personnes recensées
+          </div>
+        </div>
+        <div class="fiche-doc-stat">
+          <div class="fiche-doc-stat-value">
+            {% if territoire.nb_menages > 0 %}
+              {{ (territoire.nb_membres / territoire.nb_menages) | round(1) }}
+            {% else %}
+              —
+            {% endif %}
+          </div>
+          <div class="fiche-doc-stat-label">
+            Taille moyenne des ménages
+          </div>
+        </div>
+        <div class="fiche-doc-stat">
+          <div class="fiche-doc-stat-value">{{ nb_h }} / {{ nb_f }}</div>
+          <div class="fiche-doc-stat-label">
+            Hommes / Femmes
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# 18 indicateurs en grille compacte #}
+    <section class="fiche-doc-section">
+      <h2 class="fiche-doc-h2">Indicateurs clés</h2>
+
+      {% set themes = [
+        ('demographie', 'Démographie'),
+        ('economie', 'Économie'),
+        ('conditions', 'Conditions de vie')
+      ] %}
+
+      {% for theme_cle, theme_label in themes %}
+        <div class="fiche-doc-theme">
+          <h3 class="fiche-doc-h3">{{ theme_label }}</h3>
+          <div class="fiche-doc-indicateurs">
+            {% for ind in indicateurs_meta %}
+              {% if ind.theme == theme_cle %}
+                <div class="fiche-doc-ind">
+                  <div class="fiche-doc-ind-label">{{ ind.label }}</div>
+                  <div class="fiche-doc-ind-value">
+                    {{ territoire.valeurs.get(ind.cle, 0) }}
+                    <span class="fiche-doc-ind-unit">{{ ind.unite }}</span>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </section>
+
+    {# Pyramide des âges (mini-graphique SVG inline) #}
+    <section class="fiche-doc-section">
+      <h2 class="fiche-doc-h2">Pyramide des âges</h2>
+      <div class="fiche-doc-pyramide" id="pyramide-container">
+        {# Le SVG sera injecté en JS — fallback texte si pas de JS #}
+        <noscript>
+          <table class="fiche-doc-table">
+            <thead>
+              <tr>
+                <th>Hommes</th>
+                <th>Tranche</th>
+                <th>Femmes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for i in range(pyramide.tranches | length) %}
+                <tr>
+                  <td>{{ pyramide.hommes[i] }}</td>
+                  <td>{{ pyramide.tranches[i] }}</td>
+                  <td>{{ pyramide.femmes[i] }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </noscript>
+      </div>
+    </section>
+
+    {# Liste des quartiers (seulement pour une commune) #}
+    {% if type_fiche == 'commune' and quartiers_commune %}
+      <section class="fiche-doc-section">
+        <h2 class="fiche-doc-h2">Quartiers de {{ territoire.nom }}</h2>
+        <table class="fiche-doc-table">
+          <thead>
+            <tr>
+              <th>Quartier</th>
+              <th class="text-right">Ménages</th>
+              <th class="text-right">Personnes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for q in quartiers_commune %}
+              <tr>
+                <td>{{ q.nom }}</td>
+                <td class="text-right">{{ q.nb_menages }}</td>
+                <td class="text-right">{{ q.nb_personnes }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    {% endif %}
+
+    {# Mentions de fin #}
+    <footer class="fiche-doc-footer">
+      <p class="fiche-doc-source">
+        <strong>Source :</strong> Recensement local pilote du district
+        d'Abidjan (données fictives à ce stade). Calculs réalisés selon
+        les standards des enquêtes ménages officielles
+        (EDS, ENV) et alignés sur les Objectifs de Développement Durable
+        des Nations Unies.
+      </p>
+      <p class="fiche-doc-credit">
+        Document généré par l'Annuaire Quartier — Promotion ISE 2 —
+        École Nationale Supérieure de Statistique et d'Économie Appliquée
+        (ENSEA Abidjan).
+      </p>
+    </footer>
+
+  </article>
+
+  {# ─── Données pour le JS de la pyramide ─── #}
+  <script>
+    window.FICHE_DATA = {
+      pyramide: {{ pyramide | tojson }},
+      nb_h: {{ nb_h }},
+      nb_f: {{ nb_f }}
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/fiche.js') }}"></script>
+
+{% endif %}
+
+{% endblock %}

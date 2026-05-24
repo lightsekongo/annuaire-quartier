@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Accueil — Annuaire & Statistiques de Quartier{% endblock %}
+
+{% block content %}
+
+  {# ============================================================
+     HERO
+     ============================================================ #}
+  <section class="hero fade-up">
+    <span class="hero-eyebrow">Recensement communautaire d'Abidjan</span>
+    <h1 class="hero-title">
+      Annuaire & <em>Statistiques</em><br>de Quartier
+    </h1>
+    <p class="hero-sub">
+      Photographie socio-démographique du District autonome d'Abidjan, mise à
+      jour à chaque enregistrement, calculée à partir des ménages recensés
+      sur le terrain.
+    </p>
+  </section>
+
+  {% if vide %}
+
+    <div class="empty-state fade-up delay-1">
+      <div class="empty-state-icon">📊</div>
+      <p>Aucune donnée recensée pour le moment.</p>
+      <a href="{{ url_for('menages_bp.nouveau') }}" class="btn btn-primary">
+        Commencer le recensement →
+      </a>
+    </div>
+
+  {% else %}
+
+    {# ============================================================
+       BANDE STATISTIQUES (fond institutionnel)
+       ============================================================ #}
+    <section class="stats-band fade-up delay-1">
+
+      {# Onglets thématiques #}
+      <div class="tabs" id="theme-tabs">
+        <button type="button" class="tab tab-active" data-tab="demographie">
+          Démographie
+        </button>
+        <button type="button" class="tab" data-tab="economie">
+          Économie
+        </button>
+        <button type="button" class="tab" data-tab="conditions">
+          Conditions de vie
+        </button>
+        <span class="tab-indicator"></span>
+      </div>
+
+      {# Panneaux d'indicateurs #}
+      {% for theme, cartes in indicateurs.items() %}
+        <div class="tab-panel {% if loop.first %}tab-panel-active{% endif %}"
+             data-panel="{{ theme }}">
+
+          <div class="kpi-carousel">
+
+            <div class="kpi-track" data-track>
+              {% for c in cartes %}
+                <article class="kpi-card" data-card>
+                  <div class="kpi-label">{{ c.label }}</div>
+                  <div class="kpi-value-row">
+                    <span class="kpi-value counter"
+                          data-target="{{ c.valeur }}"
+                          data-decimal="{{ 1 if c.valeur is number and c.valeur != c.valeur|int else 0 }}">
+                      0
+                    </span>
+                    {% if c.unite %}
+                      <span class="kpi-unit">{{ c.unite }}</span>
+                    {% endif %}
+                  </div>
+
+                  <svg class="kpi-icon" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.8"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    {% include "_icons/" + c.icone + ".svg" ignore missing %}
+                  </svg>
+
+                  <div class="kpi-meta">{{ c.meta }}</div>
+                </article>
+              {% endfor %}
+            </div>
+
+          </div>
+        </div>
+      {% endfor %}
+
+      {# Flèches de navigation (sous le carrousel, centrées) #}
+      <div class="kpi-arrows">
+        <button type="button" class="kpi-arrow" data-prev
+                aria-label="Cartes précédentes">←</button>
+        <button type="button" class="kpi-arrow" data-next
+                aria-label="Cartes suivantes">→</button>
+      </div>
+
+    </section>
+
+    {# ============================================================
+       BANDEAU ACTIONS RAPIDES — Saisir / Analyser / Exporter
+       ============================================================ #}
+    <div class="quick-access fade-up delay-3">
+
+      <a href="{{ url_for('menages_bp.nouveau') }}" class="qa-card">
+        <span class="qa-icon-wrap qa-icon-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="11" x2="12" y2="17"></line>
+            <line x1="9" y1="14" x2="15" y2="14"></line>
+          </svg>
+        </span>
+        <div class="qa-label">Recensement</div>
+        <div class="qa-title">Enregistrer un ménage</div>
+        <p class="qa-desc">
+          Ajouter un nouveau foyer au recensement avec ses caractéristiques
+          de logement, ses services de base et ses membres.
+        </p>
+        <span class="qa-arrow">Démarrer la saisie →</span>
+      </a>
+
+      <a href="{{ url_for('explorer_bp.index') }}" class="qa-card">
+        <span class="qa-icon-wrap qa-icon-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </span>
+        <div class="qa-label">Explorer</div>
+        <div class="qa-title">Atelier de visualisation</div>
+        <p class="qa-desc">
+          Choisir une variable, un croisement et des filtres pour générer
+          automatiquement le graphique le plus adapté.
+        </p>
+        <span class="qa-arrow">Lancer l'exploration →</span>
+      </a>
+
+      <a href="{{ url_for('fiche_bp.index') }}" class="qa-card">
+        <span class="qa-icon-wrap qa-icon-3">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+        </span>
+        <div class="qa-label">Fiche imprimable</div>
+        <div class="qa-title">Générer le document</div>
+        <p class="qa-desc">
+          Synthèse statistique au format A4 prête à imprimer ou à exporter
+          en PDF, pour Abidjan ou une commune au choix.
+        </p>
+        <span class="qa-arrow">Générer la fiche →</span>
+      </a>
+
+    </div>
+
+    <p class="text-muted text-sm text-center mt-4 fade-up delay-4">
+      Données calculées sur
+      <span class="text-bold">{{ nb_menages }}</span> ménages,
+      <span class="text-bold">{{ nb_membres }}</span> individus
+      répartis sur <span class="text-bold">{{ nb_communes }}</span> communes
+      et <span class="text-bold">{{ nb_quartiers }}</span> quartiers
+      du District autonome d'Abidjan.
+    </p>
+
+  {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+  {% if not vide %}
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+  {% endif %}
+{% endblock %}

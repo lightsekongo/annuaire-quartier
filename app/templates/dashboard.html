@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Statistiques — Annuaire Quartier{% endblock %}
+
+{% block content %}
+<div class="fade-up">
+
+{% if vide %}
+    <div class="home-empty">
+        <p style="font-size:2.5rem;margin-bottom:0.5rem;">📊</p>
+        <p>Aucune donnée disponible. Commencez par enregistrer des ménages.</p>
+        <a href="{{ url_for('menages_bp.nouveau') }}" role="button" style="margin-top:1rem;display:inline-block;">        </a>
+    </div>
+
+{% else %}
+
+    <div class="page-header">
+        <div class="page-header-left">
+            <h2>Tableau de bord statistique</h2>
+            <p>Vue d'ensemble socio-démographique du quartier</p>
+        </div>
+    </div>
+
+    <!-- Indicateurs clés -->
+    <div class="stat-grid">
+        <div class="stat-card fade-up delay-1">
+            <p class="stat-label">Ménages recensés</p>
+            <p class="stat-value">{{ nb_menages }}</p>
+        </div>
+        <div class="stat-card fade-up delay-2">
+            <p class="stat-label">Individus recensés</p>
+            <p class="stat-value">{{ nb_membres }}</p>
+        </div>
+        <div class="stat-card fade-up delay-3">
+            <p class="stat-label">Taille moyenne</p>
+            <p class="stat-value">{{ taille_moyenne }}</p>
+        </div>
+        <div class="stat-card fade-up delay-4">
+            <p class="stat-label">Taux de scolarisation</p>
+            <p class="stat-value">{{ taux_scolarisation }}%</p>
+        </div>
+        <div class="stat-card fade-up delay-5">
+            <p class="stat-label">Taux d'activité (15+)</p>
+            <p class="stat-value">{{ taux_activite }}%</p>
+        </div>
+    </div>
+
+    <!-- Graphiques ligne 1 -->
+    <div class="dashboard-grid-2">
+        <div class="chart-card fade-up delay-1">
+            <p class="chart-card-title">Répartition par sexe</p>
+            <canvas id="chartSexe" height="220"></canvas>
+        </div>
+        <div class="chart-card fade-up delay-2">
+            <p class="chart-card-title">Statuts scolaires</p>
+            <canvas id="chartStatuts" height="220"></canvas>
+        </div>
+    </div>
+
+    <!-- Pyramide des âges -->
+    <div class="chart-card fade-up delay-1" style="margin-bottom:1rem;">
+        <p class="chart-card-title">Pyramide des âges</p>
+        <canvas id="chartPyramide" height="110"></canvas>
+    </div>
+
+    <!-- Graphiques ligne 2 -->
+    <div class="dashboard-grid-2">
+        <div class="chart-card fade-up delay-2">
+            <p class="chart-card-title">Activités principales</p>
+            <canvas id="chartActivites" height="280"></canvas>
+        </div>
+        <div class="chart-card fade-up delay-3">
+            <p class="chart-card-title">Ménages par quartier</p>
+            <canvas id="chartQuartiers" height="280"></canvas>
+        </div>
+    </div>
+
+    <div class="dashboard-print-row">
+        <a href="{{ url_for('dashboard_bp.fiche_imprimable') }}" role="button" class="secondary outline">            🖨️ Générer la fiche imprimable
+        </a>
+    </div>
+
+{% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if not vide %}
+<script>
+const BRAND   = '#1d4ed8';
+const PINK    = '#db2777';
+const PALETTE = ['#1d4ed8','#7c3aed','#db2777','#ea580c','#ca8a04','#16a34a','#0891b2','#4f46e5','#be123c','#15803d'];
+const FONT    = "'Outfit', sans-serif";
+
+Chart.defaults.font.family = FONT;
+Chart.defaults.color       = '#71717a';
+
+const base = {
+    responsive : true,
+    plugins    : { legend : { labels : { font : { family: FONT, size: 12 }, padding: 12 } } }
+};
+
+// Sexe
+new Chart(document.getElementById('chartSexe'), {
+    type : 'doughnut',
+    data : {
+        labels   : {{ sexe_labels | tojson }},
+        datasets : [{ data: {{ sexe_data | tojson }}, backgroundColor: [BRAND, PINK], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options : { ...base, cutout: '68%' }
+});
+
+// Statuts scolaires
+new Chart(document.getElementById('chartStatuts'), {
+    type : 'doughnut',
+    data : {
+        labels   : {{ statuts_labels | tojson }},
+        datasets : [{ data: {{ statuts_data | tojson }}, backgroundColor: PALETTE, borderWidth: 0, hoverOffset: 4 }]
+    },
+    options : { ...base, cutout: '68%' }
+});
+
+// Pyramide
+new Chart(document.getElementById('chartPyramide'), {
+    type : 'bar',
+    data : {
+        labels   : {{ pyramide_labels | tojson }},
+        datasets : [
+            { label: 'Masculin', data: {{ pyramide_masculin | tojson }}, backgroundColor: BRAND, borderRadius: 3 },
+            { label: 'Féminin',  data: {{ pyramide_feminin  | tojson }}, backgroundColor: PINK,  borderRadius: 3 }
+        ]
+    },
+    options : { ...base, indexAxis: 'y', scales: {
+        x: { grid: { color: '#f4f4f5' }, ticks: { font: { family: FONT } } },
+        y: { grid: { display: false   }, ticks: { font: { family: FONT, size: 11 } } }
+    }}
+});
+
+// Activités
+new Chart(document.getElementById('chartActivites'), {
+    type : 'bar',
+    data : {
+        labels   : {{ activites_labels | tojson }},
+        datasets : [{ data: {{ activites_data | tojson }}, backgroundColor: BRAND, borderRadius: 4, hoverBackgroundColor: '#1e40af' }]
+    },
+    options : { ...base, indexAxis: 'y',
+        plugins : { legend: { display: false } },
+        scales  : {
+            x: { grid: { color: '#f4f4f5' }, ticks: { font: { family: FONT } } },
+            y: { grid: { display: false }, ticks: { font: { family: FONT, size: 11 } } }
+        }
+    }
+});
+
+// Quartiers
+new Chart(document.getElementById('chartQuartiers'), {
+    type : 'bar',
+    data : {
+        labels   : {{ quartiers_labels | tojson }},
+        datasets : [{ data: {{ quartiers_data | tojson }}, backgroundColor: PALETTE, borderRadius: 6 }]
+    },
+    options : { ...base,
+        plugins : { legend: { display: false } },
+        scales  : {
+            y: { grid: { color: '#f4f4f5' }, beginAtZero: true, ticks: { font: { family: FONT } } },
+            x: { grid: { display: false }, ticks: { font: { family: FONT } } }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

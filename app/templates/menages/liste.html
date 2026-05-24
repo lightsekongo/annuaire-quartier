@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Recensement — Annuaire de quartier{% endblock %}
+
+{% block content %}
+
+  {# ─── En-tête de page ─── #}
+  <div class="page-intro fade-up">
+    <span class="hero-eyebrow">Recensement</span>
+    <h2 class="page-intro-title">
+      <em>Annuaire</em> des ménages recensés
+    </h2>
+    <p class="page-intro-sub">
+      Consultez, recherchez et modifiez les ménages enregistrés dans le
+      district d'Abidjan. Chaque fiche regroupe les informations sur le
+      logement, l'accès aux services de base et les membres du foyer.
+    </p>
+  </div>
+
+  {# ─── Messages flash ─── #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="flash flash-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {# ─── Barre de recherche + bouton créer ─── #}
+  <div class="recensement-toolbar fade-up delay-1">
+    <div class="recensement-search-wrap">
+      <svg class="recensement-search-icon" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text"
+             id="recherche-menage"
+             class="recensement-search"
+             placeholder="Rechercher un ménage par nom…"
+             value="{{ q }}"
+             autocomplete="off">
+      {% if q %}
+        <button type="button" id="effacer-recherche" class="recensement-search-clear"
+                aria-label="Effacer la recherche">&times;</button>
+      {% endif %}
+    </div>
+
+    <a href="{{ url_for('menages_bp.nouveau') }}" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Nouveau ménage
+    </a>
+  </div>
+
+  {# ─── Filtres commune / quartier ─── #}
+  <div class="recensement-filtres fade-up delay-2">
+    <div class="recensement-filtre-group">
+      <label for="filtre-commune" class="recensement-filtre-label">Commune</label>
+      <select id="filtre-commune" class="indicator-select recensement-filtre-select">
+        <option value="">Toutes les communes</option>
+        {% for c in communes %}
+  <option value="{{ c.id_commune }}"
+          {% if c.id_commune|string == id_commune_actif %}selected{% endif %}>
+    {{ c.nom }}
+  </option>
+{% endfor %}
+      </select>
+    </div>
+
+    <div class="recensement-filtre-group">
+      <label for="filtre-quartier" class="recensement-filtre-label">Quartier</label>
+      <select id="filtre-quartier" class="indicator-select recensement-filtre-select"
+              {% if not id_commune_actif %}disabled{% endif %}>
+        <option value="">Tous les quartiers</option>
+        {% if id_commune_actif %}
+          {% set quartiers_dispo = quartiers_par_commune.get(id_commune_actif|int, []) %}
+          {% for nom_q in quartiers_dispo %}
+            <option value="{{ nom_q }}"
+                    {% if nom_q == nom_quartier_actif %}selected{% endif %}>
+              {{ nom_q }}
+            </option>
+          {% endfor %}
+        {% endif %}
+      </select>
+    </div>
+
+    <div class="recensement-compteur">
+      <span class="recensement-compteur-value" id="compteur-resultats">
+        {{ nb_filtres }}
+      </span>
+      <span class="recensement-compteur-label">
+        {% if nb_filtres == total %}
+          ménage{{ 's' if total > 1 else '' }} au total
+        {% else %}
+          sur {{ total }} ménage{{ 's' if total > 1 else '' }}
+        {% endif %}
+      </span>
+    </div>
+
+    {% if q or id_commune_actif or nom_quartier_actif %}
+      <a href="{{ url_for('menages_bp.liste') }}"
+         class="recensement-reset"
+         title="Effacer tous les filtres">
+        Réinitialiser
+      </a>
+    {% endif %}
+  </div>
+
+  {# ─── Liste des ménages ─── #}
+  {% if menages %}
+    <div class="menages-liste fade-up delay-3">
+      {% for menage in menages %}
+        <a href="{{ url_for('menages_bp.fiche', id_menage=menage.id_menage) }}"
+           class="menage-card"
+           data-nom="{{ menage.nom_menage|lower }}"
+           data-commune="{{ menage.id_commune }}"
+           data-quartier="{{ menage.quartier }}">
+
+          <div class="menage-card-main">
+            <div class="menage-card-name">{{ menage.nom_menage }}</div>
+            <div class="menage-card-loc">
+              <span class="menage-card-commune">{{ menage.commune }}</span>
+              <span class="menage-card-sep">·</span>
+              <span class="menage-card-quartier">{{ menage.quartier }}</span>
+            </div>
+          </div>
+
+          <div class="menage-card-meta">
+            <div class="menage-card-membres">
+              <span class="menage-card-membres-value">{{ menage._nb_membres }}</span>
+              <span class="menage-card-membres-label">
+                membre{{ 's' if menage._nb_membres > 1 else '' }}
+              </span>
+            </div>
+            {% if menage.type_logement %}
+              <span class="tag tag-brand">{{ menage.type_logement }}</span>
+            {% endif %}
+          </div>
+
+          <svg class="menage-card-arrow" width="18" height="18" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </a>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    {# État vide #}
+    <div class="empty-state fade-up delay-3">
+      {% if q or id_commune_actif or nom_quartier_actif %}
+        <div class="empty-state-icon">🔍</div>
+        <p>Aucun ménage ne correspond à vos critères de recherche.</p>
+        <a href="{{ url_for('menages_bp.liste') }}" class="btn btn-secondary">
+          Réinitialiser les filtres
+        </a>
+      {% else %}
+        <div class="empty-state-icon">📋</div>
+        <p>Aucun ménage enregistré pour le moment.</p>
+        <a href="{{ url_for('menages_bp.nouveau') }}" class="btn btn-primary">
+          Créer le premier ménage
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {# ─── Données pour le JavaScript ─── #}
+  <script>
+    window.RECENSEMENT_DATA = {
+      quartiers_par_commune: {{ quartiers_par_commune|tojson }},
+    };
+  </script>
+
+  <script src="{{ url_for('static', filename='js/recensement.js') }}"></script>
+
+{% endblock %}
